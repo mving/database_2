@@ -28,8 +28,8 @@ public class CassandraQueries {
 
     // OP-3
     public static final String INSERT_BUSQUEDA = 
-        "INSERT INTO ecommerce.busquedas_por_termino (termino, timestamp, usuario_id, convertido) " +
-        "VALUES ('%s', toTimestamp(now()), %s, false);";
+        "INSERT INTO ecommerce.busquedas_por_termino (termino, timestamp, usuario_id, convertido, productos_devueltos) " +
+        "VALUES ('%s', toTimestamp(now()), %s, false, %s);";
     public static final String HISTORICO_CONVERSIONES = 
         "SELECT productos_devueltos, convertido FROM ecommerce.busquedas_por_termino WHERE termino = '%s';";
 

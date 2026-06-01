@@ -409,20 +409,36 @@ public class ReportPanel extends JPanel {
         String userId = op3UserIdField.getText().trim();
         StringBuilder sb = new StringBuilder("=== OP-3: BÚSQUEDA CON INTENCIÓN ===\n\n");
 
-        sb.append("1. CASSANDRA (Registro de auditoría)\n");
-        String insert = String.format(CassandraQueries.INSERT_BUSQUEDA, term, userId);
-        cassandra.executeForReport(insert); // Ejecutar inserción
-        sb.append("Evento guardado correctamente.\n");
-
-        sb.append("\n2. CASSANDRA (Histórico de conversiones)\n");
-        String histQuery = String.format(CassandraQueries.HISTORICO_CONVERSIONES, term);
-        List<Map<String, Object>> histData = cassandra.executeForReport(histQuery);
-        appendRows(sb, histData);
-
-        sb.append("\n3. MONGODB (Búsqueda textual + stock > 0)\n");
+        sb.append("1. MONGODB (Búsqueda textual + stock > 0)\n");
         String mQuery = "{ \"$text\": { \"$search\": \"" + term + "\" }, \"stock\": { \"$gt\": 0 } }";
         List<Map<String, Object>> mData = mongo.findDocuments("productos", mQuery, 10);
         appendRows(sb, mData);
+
+        sb.append("\n2. CASSANDRA (Registro de auditoría)\n");
+        String idsArray = "[]";
+        if (!mData.isEmpty()) {
+            idsArray = mData.stream()
+                .map(m -> {
+                    String oid = m.get("_id").toString();
+                    if (oid.length() == 24) {
+                        return String.format("%s-%s-%s-%s-%s00000000",
+                            oid.substring(0, 8), oid.substring(8, 12),
+                            oid.substring(12, 16), oid.substring(16, 20),
+                            oid.substring(20, 24));
+                    }
+                    return oid;
+                })
+                .collect(Collectors.joining(",", "[", "]"));
+        }
+        
+        String insert = String.format(CassandraQueries.INSERT_BUSQUEDA, term, userId, idsArray);
+        cassandra.executeForReport(insert); // Ejecutar inserción
+        sb.append("Evento guardado correctamente con los productos devueltos.\n");
+
+        sb.append("\n3. CASSANDRA (Histórico de conversiones)\n");
+        String histQuery = String.format(CassandraQueries.HISTORICO_CONVERSIONES, term);
+        List<Map<String, Object>> histData = cassandra.executeForReport(histQuery);
+        appendRows(sb, histData);
 
         return sb.toString();
     }
