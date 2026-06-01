@@ -58,11 +58,6 @@ NEO4J_DATABASE
 NEO4J_USER
 NEO4J_PASSWORD
 ```
-
-Notas:
-
-- La base de Neo4j puede quedar vacia para usar la base por defecto de Aura.
-
 ## Ejecucion
 
 Desde la raiz del proyecto:
