@@ -355,21 +355,52 @@ public class ReportPanel extends JPanel {
         sb.append("1. MONGODB (Maestro y Reviews)\n");
         String mQuery = String.format(MongoQueries.PRODUCTO_REPORTE, mongoId);
         List<Map<String, Object>> mData = mongo.findDocuments("productos", mQuery, 1);
-        appendRows(sb, mData);
+        if (mData.isEmpty()) {
+            sb.append("   [!] Producto no encontrado.\n");
+        } else {
+            Map<String, Object> p = mData.get(0);
+            sb.append("   📦 Producto: ").append(p.get("nombre")).append("\n");
+            sb.append("   🏷️ Marca: ").append(p.get("marca")).append("\n");
+            sb.append("   💵 Precio Base: $").append(p.get("precio_base")).append("\n");
+            
+            Object catObj = p.get("categoria");
+            if (catObj instanceof org.bson.Document) {
+                sb.append("   📂 Categoría: ").append(((org.bson.Document) catObj).getString("nombre")).append("\n");
+            }
+            
+            sb.append("   ⭐ Rating: ").append(p.get("rating_promedio")).append(" (").append(p.get("total_reviews")).append(" reviews)\n");
+        }
         
-        sb.append("\n2. NEO4J (Top 5 co-compras)\n");
+        sb.append("\n2. NEO4J (Top Co-compras)\n");
         List<Map<String, Object>> nData = neo4j.runCypher(Neo4jQueries.TOP_COCOMPRAS, Map.of("id", mongoId));
-        appendRows(sb, nData);
+        if (nData.isEmpty()) {
+            sb.append("   No hay historial de co-compras.\n");
+        } else {
+            for (Map<String, Object> n : nData) {
+                sb.append("   🔗 ").append(n.get("nombre")).append("\n");
+            }
+        }
 
         sb.append("\n3. CASSANDRA (Métricas 24hs)\n");
         String today = java.time.LocalDate.now().toString();
         // Para simplificar, traemos las métricas del día actual desde la hora 0
         String cQuery = String.format(CassandraQueries.METRICAS_HORARIAS, cassId, today, 0);
         List<Map<String, Object>> cData = cassandra.executeForReport(cQuery);
-        appendRows(sb, cData);
+        
+        if (cData.isEmpty()) {
+            sb.append("   No hay métricas registradas hoy.\n");
+        } else {
+            for (Map<String, Object> c : cData) {
+                sb.append("   📊 Vistas: ").append(c.get("vistas"))
+                  .append(" | Clics: ").append(c.get("clics"))
+                  .append(" | Conversiones: ").append(c.get("conversiones"))
+                  .append(" | Revenue: $").append(c.get("revenue_por_hora")).append("\n");
+            }
+        }
 
         return sb.toString();
     }
+
 
     private String ejecutarOP2() {
         String userId = op2UserIdField.getText().trim();
@@ -503,7 +534,7 @@ public class ReportPanel extends JPanel {
     private String ejecutarOP5() {
         String mongoId = op5ProductIdField.getText().trim();
         String cassId = op5CassandraIdField.getText().trim();
-        String date = "2026-05-30";
+        String date = java.time.LocalDate.now().toString(); // Use today's date instead of hardcoded
 
         StringBuilder sb = new StringBuilder("=== OP-5: PERFORMANCE CATÁLOGO ===\n\n");
         
@@ -515,12 +546,42 @@ public class ReportPanel extends JPanel {
         
         List<Map<String, Object>> graphRows = neo4j.runCypher(Neo4jQueries.REPORTE_PRODUCTO, Map.of("id", mongoId));
 
-        sb.append("CONSULTA CASSANDRA\n");
-        appendRows(sb, metrics);
-        sb.append("\nCONSULTA MONGODB\n");
-        appendRows(sb, products);
-        sb.append("\nCONSULTA NEO4J\n");
-        appendRows(sb, graphRows);
+        sb.append("1. CASSANDRA (Histórico de Métricas)\n");
+        if (metrics.isEmpty()) {
+            sb.append("   [!] No hay métricas en la fecha indicada.\n");
+        } else {
+            for (Map<String, Object> m : metrics) {
+                sb.append("   📅 Fecha: ").append(m.get("fecha"))
+                  .append(" | 👁️ Vistas: ").append(m.get("vistas"))
+                  .append(" | 🛒 Conversiones: ").append(m.get("conversiones")).append("\n");
+            }
+        }
+
+        sb.append("\n2. MONGODB (Catálogo Maestro)\n");
+        if (products.isEmpty()) {
+            sb.append("   [!] Producto no encontrado en el catálogo.\n");
+        } else {
+            Map<String, Object> p = products.get(0);
+            sb.append("   📦 Producto: ").append(p.get("nombre")).append("\n");
+            sb.append("   🏷️ Marca: ").append(p.get("marca")).append("\n");
+            sb.append("   💵 Precio Base: $").append(p.get("precio_base")).append("\n");
+            
+            Object catObj = p.get("categoria");
+            if (catObj instanceof org.bson.Document) {
+                sb.append("   📂 Categoría: ").append(((org.bson.Document) catObj).getString("nombre")).append("\n");
+            }
+            sb.append("   ⭐ Rating: ").append(p.get("rating_promedio")).append(" (").append(p.get("total_reviews")).append(" reviews)\n");
+        }
+
+        sb.append("\n3. NEO4J (Relevancia y Pagerank)\n");
+        if (graphRows.isEmpty()) {
+            sb.append("   [!] Producto no analizado en el grafo de recomendaciones.\n");
+        } else {
+            for (Map<String, Object> g : graphRows) {
+                sb.append("   📈 PageRank (Relevancia global): ").append(g.get("pagerank")).append("\n");
+            }
+        }
+
         return sb.toString();
     }
 

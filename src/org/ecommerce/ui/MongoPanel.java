@@ -207,6 +207,24 @@ public class MongoPanel extends QueryPanel {
         return row;
     }
 
+    public void insertDocument(String collectionName, Document doc) {
+        ensureConnected();
+        try {
+            database.getCollection(collectionName).insertOne(doc);
+        } catch (Exception ex) {
+            throw new RuntimeException("MongoDB Insert - " + Errors.rootMessage(ex));
+        }
+    }
+
+    public void updateDocument(String collectionName, Document filter, Document update) {
+        ensureConnected();
+        try {
+            database.getCollection(collectionName).updateOne(filter, new Document("$set", update));
+        } catch (Exception ex) {
+            throw new RuntimeException("MongoDB Update - " + Errors.rootMessage(ex));
+        }
+    }
+
     private String normalizeMongoFilter(String text) {
         Pattern pattern = Pattern.compile("ObjectId\\(\"([0-9a-fA-F]{24})\"\\)");
         Matcher matcher = pattern.matcher(text.trim());
@@ -228,5 +246,10 @@ public class MongoPanel extends QueryPanel {
         if (client != null) {
             client.close();
         }
+    }
+
+    public MongoDatabase getDatabase() {
+        ensureConnected();
+        return database;
     }
 }

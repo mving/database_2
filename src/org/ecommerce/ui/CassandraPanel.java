@@ -90,12 +90,24 @@ public class CassandraPanel extends QueryPanel {
         });
 
         JComboBox<String> templates = new JComboBox<>(new String[]{
-                "Metricas del producto Adidas",
                 "Listar tablas",
+                "[3.1] Inserción de un evento de usuario",
+                "[3.1.a] Eventos de usuario en 24hs",
+                "[3.1.b] Últimos 100 eventos de producto",
+                "[3.1.c] Tiempo promedio de sesión",
+                "[3.1.d] Productos más vistos en 2h",
+                "[3.2.a] Crear sesión con TTL 30m",
+                "[3.2.b] Actualizar carrito (Renovar TTL)",
+                "[3.2.c] Recuperar carrito por sesion_id",
+                "[3.2.d] Verificar TTL restante",
+                "[3.3] Inserción de una métrica",
+                "[3.3.a] Métricas hora por hora en un día",
+                "[3.3.b] Tasa de conversión en la semana",
+                "[3.3.c] Crecimiento de vistas",
                 "Consulta libre"
         });
         templates.addActionListener(e -> applyTemplate((String) templates.getSelectedItem()));
-        applyTemplate("Metricas del producto Adidas");
+        applyTemplate("[3.1] Inserción de un evento de usuario");
 
         indicator.setForeground(Color.RED);
         JButton connect = new JButton("Conectar");
@@ -123,8 +135,32 @@ public class CassandraPanel extends QueryPanel {
     private void applyTemplate(String template) {
         if ("Listar tablas".equals(template)) {
             queryArea.setText(CassandraQueries.LISTAR_TABLAS);
-        } else if ("Metricas del producto Adidas".equals(template)) {
-            queryArea.setText(CassandraQueries.METRICAS_ADIDAS);
+        } else if ("[3.1] Inserción de un evento de usuario".equals(template)) {
+            queryArea.setText(CassandraQueries.INSERT_EVENTO_USUARIO);
+        } else if ("[3.1.a] Eventos de usuario en 24hs".equals(template)) {
+            queryArea.setText(CassandraQueries.EVENTOS_USUARIO_24H);
+        } else if ("[3.1.b] Últimos 100 eventos de producto".equals(template)) {
+            queryArea.setText(CassandraQueries.ULTIMOS_100_EVENTOS_PRODUCTO);
+        } else if ("[3.1.c] Tiempo promedio de sesión".equals(template)) {
+            queryArea.setText(CassandraQueries.TIEMPO_PROMEDIO_SESION);
+        } else if ("[3.1.d] Productos más vistos en 2h".equals(template)) {
+            queryArea.setText(CassandraQueries.PRODUCTOS_MAS_VISTOS_2H);
+        } else if ("[3.2.a] Crear sesión con TTL 30m".equals(template)) {
+            queryArea.setText(CassandraQueries.CREAR_SESION_TTL);
+        } else if ("[3.2.b] Actualizar carrito (Renovar TTL)".equals(template)) {
+            queryArea.setText(CassandraQueries.ACTUALIZAR_CARRITO_TTL);
+        } else if ("[3.2.c] Recuperar carrito por sesion_id".equals(template)) {
+            queryArea.setText(CassandraQueries.RECUPERAR_CARRITO_SESION);
+        } else if ("[3.2.d] Verificar TTL restante".equals(template)) {
+            queryArea.setText(CassandraQueries.VERIFICAR_TTL_SESION);
+        } else if ("[3.3] Inserción de una métrica".equals(template)) {
+            queryArea.setText(CassandraQueries.INSERT_METRICA);
+        } else if ("[3.3.a] Métricas hora por hora en un día".equals(template)) {
+            queryArea.setText(CassandraQueries.METRICAS_HORA_POR_HORA);
+        } else if ("[3.3.b] Tasa de conversión en la semana".equals(template)) {
+            queryArea.setText(CassandraQueries.TASA_CONVERSION_SEMANA);
+        } else if ("[3.3.c] Crecimiento de vistas".equals(template)) {
+            queryArea.setText(CassandraQueries.CRECIMIENTO_VISTAS);
         }
     }
 

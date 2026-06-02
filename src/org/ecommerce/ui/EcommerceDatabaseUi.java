@@ -33,6 +33,7 @@ public class EcommerceDatabaseUi extends JFrame {
         tabs.addTab("Cassandra", cassandraPanel);
         tabs.addTab("MongoDB", mongoPanel);
         tabs.addTab("Neo4j", neo4jPanel);
+        tabs.addTab("Generador de Datos", new TestDataPanel(cassandraPanel, mongoPanel, neo4jPanel));
         root.add(tabs, BorderLayout.CENTER);
 
         setContentPane(root);
