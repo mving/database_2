@@ -125,13 +125,16 @@ public class TestDataPanel extends JPanel {
                     for (int i = 0; i < 3; i++) {
                         String mergeCypher = "MERGE (p:Producto {producto_id: $id}) SET p.nombre = $nombre, p.pagerank = $pr";
                         neo4j.runCypher(mergeCypher, Map.of("id", mongoIds[i], "nombre", nombres[i], "pr", (3-i)*1.5));
+                        publish("   [Neo4j] Nodo :Producto creado/actualizado → id=" + mongoIds[i] + ", nombre=" + nombres[i] + ", pagerank=" + ((3-i)*1.5));
                     }
                     
                     // Relaciones Neo4j (Co-compras)
                     neo4j.runCypher("MATCH (a:Producto {producto_id: $idA}), (b:Producto {producto_id: $idB}) MERGE (a)-[:COMPRADO_CON]->(b)", 
                         Map.of("idA", mongoIds[0], "idB", mongoIds[1]));
+                    publish("   [Neo4j] Relación creada → (" + nombres[0] + ")-[:COMPRADO_CON]->(" + nombres[1] + ")");
                     neo4j.runCypher("MATCH (a:Producto {producto_id: $idA}), (b:Producto {producto_id: $idB}) MERGE (a)-[:COMPRADO_CON]->(b)", 
                         Map.of("idA", mongoIds[0], "idB", mongoIds[2]));
+                    publish("   [Neo4j] Relación creada → (" + nombres[0] + ")-[:COMPRADO_CON]->(" + nombres[2] + ")");
 
                     // Cassandra Métricas
                     for (int i = 0; i < 3; i++) {
@@ -143,22 +146,26 @@ public class TestDataPanel extends JPanel {
                             );
                             cassandra.executeForReport(insertMetrics);
                         }
+                        publish("   [Cassandra] metricas_diarias → producto=" + nombres[i] + ", fecha=" + today + ", horas 0-" + currentHour + " (" + (currentHour+1) + " filas), vistas=" + (100) + "→" + (100-currentHour*2) + ", clics=20, conv=5, rev=$5000/h");
                     }
-                    publish("   Métricas insertadas en Cassandra y Co-compras en Neo4j.");
 
                     publish("\n4. Inyectando OP-2 (Recomendación / Historial de eventos)");
                     // Asegurar Nodos de Usuario en Neo4j
                     for (int i = 0; i < 3; i++) {
                         neo4j.runCypher("MERGE (u:Usuario {usuario_id: $uid})", Map.of("uid", userCassIds[i]));
+                        publish("   [Neo4j] Nodo :Usuario creado/actualizado → id=" + userCassIds[i]);
                     }
                     
                     // Relaciones COMPRO en Neo4j para filtrado colaborativo
                     neo4j.runCypher("MATCH (u:Usuario {usuario_id: $uid}), (p:Producto {producto_id: $pid}) MERGE (u)-[:COMPRO]->(p)", 
                         Map.of("uid", userCassIds[0], "pid", mongoIds[1])); // U1 compró P2
+                    publish("   [Neo4j] Relación creada → (Usuario 1)-[:COMPRO]->(" + nombres[1] + ")");
                     neo4j.runCypher("MATCH (u:Usuario {usuario_id: $uid}), (p:Producto {producto_id: $pid}) MERGE (u)-[:COMPRO]->(p)", 
                         Map.of("uid", userCassIds[1], "pid", mongoIds[1])); // U2 compró P2
+                    publish("   [Neo4j] Relación creada → (Usuario 2)-[:COMPRO]->(" + nombres[1] + ")");
                     neo4j.runCypher("MATCH (u:Usuario {usuario_id: $uid}), (p:Producto {producto_id: $pid}) MERGE (u)-[:COMPRO]->(p)", 
                         Map.of("uid", userCassIds[1], "pid", mongoIds[2])); // U2 compró P3
+                    publish("   [Neo4j] Relación creada → (Usuario 2)-[:COMPRO]->(" + nombres[2] + ")");
                         
                     // Cassandra Eventos Recientes (Últimos 30 mins)
                     for (int i = 0; i < 3; i++) {
@@ -181,8 +188,8 @@ public class TestDataPanel extends JPanel {
                             );
                             cassandra.executeForReport(insertEventP);
                         }
+                        publish("   [Cassandra] eventos_usuario + eventos_producto → 10 eventos 'view' para Usuario " + (i+1) + " sobre " + nombres[0] + " (últimos 20 min, cada 2 min)");
                     }
-                    publish("   Historial de eventos creado en Cassandra y grafo de compras en Neo4j.");
 
                     publish("\n5. Inyectando OP-3 (Búsqueda Histórica)");
                     for (int i = 0; i < 3; i++) {
@@ -193,8 +200,8 @@ public class TestDataPanel extends JPanel {
                             termino, userCassIds[i], cassIds[i]
                         );
                         cassandra.executeForReport(insertBusqueda);
+                        publish("   [Cassandra] busquedas_por_termino → término=\"" + termino + "\", usuario=" + (i+1) + ", convertido=false, producto devuelto=" + nombres[i]);
                     }
-                    publish("   Auditoría de búsquedas registrada.");
 
                     publish("\n6. Inyectando OP-4 (Abandono de Sesiones)");
                     for (int i = 0; i < 3; i++) {
@@ -207,13 +214,13 @@ public class TestDataPanel extends JPanel {
                             sesionId, userCassIds[i], nombres[i], pastTime
                         );
                         cassandra.executeForReport(insertSesion);
+                        publish("   [Cassandra] sesiones_activas → sesion_id=" + sesionId + ", usuario=" + (i+1) + ", carrito=[" + nombres[i] + " x1], ultima_actividad=" + pastTime + " (hace 2.5h, SIN TTL → abandonada)");
                     }
-                    publish("   Sesiones con carrito abandonado creadas.");
 
                     publish("\n¡Generación Completa!");
                     publish("---------------------------------------------------------");
-                    publish("Pruébalo en la pestaña 'Reporte TP':");
-                    publish("ID Mongo de prueba: " + mongoIds[0]);
+                    publish("Datos de prueba:");
+                    publish("ID Mongo: " + mongoIds[0]);
                     publish("ID Cassandra (Producto): " + cassIds[0]);
                     publish("ID Cassandra (Usuario): " + userCassIds[0]);
                     publish("Término de búsqueda: " + nombres[0].split(" ")[0]);
